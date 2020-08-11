@@ -25,7 +25,7 @@ A causal discrete-time FIR filter of order N has the output sequence as the weig
 An input file containing the samples of 1kHz and 5kHz sinewaves added together was given to the testbench of the code to generate the output samples. The filtered result shows a 1khz waveform with almost all of the 5khz signal removed.<br><br>
 
 The input and output samples obtained from Icarus Verilog simulator were plotted in the excel as shown below:-<br><br>
-<img src = " " ><br>
+<img src = "https://github.com/anant19bansal/Low-Pass-Filter/blob/master/Icarus%20Verilog%20Simulation.png" ><br>
 
 Waveforms generated in ModelSim are shown below:-<br><br>
 <img src = "">
