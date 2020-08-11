@@ -28,4 +28,4 @@ The input and output samples obtained from Icarus Verilog simulator were plotted
 <img src = "https://github.com/anant19bansal/Low-Pass-Filter/blob/master/Icarus%20Verilog%20Simulation.png" ><br>
 
 Waveforms generated in ModelSim are shown below:-<br><br>
-<img src = "">
+<img src = "https://github.com/anant19bansal/Low-Pass-Filter/blob/master/ModelSim%20Simulation.png">
