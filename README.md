@@ -7,8 +7,8 @@ Designed and simulated a 31-tap Low Pass FIR Digital Filter using Verilog which 
 ### Description
 Finite impulse response (FIR) filters are filters whose impulse response (or response to any finite length input) is of finite duration, because it settles to zero in finite time.
 These filters do not use feedback and their output is only related to current and previous inputs. <br>
-A causal discrete-time FIR filter of order N has the output sequence as the weighted sum of previous input values:
-<img src = ""><br>
+A causal discrete-time FIR filter of order N has the output sequence as the weighted sum of previous input values:<br>
+<img src = "https://github.com/anant19bansal/Low-Pass-Filter/blob/master/Filter%20equation.png" width="50%"><br>
 #### where:
   - x[n] is the input signal
   - y[n] is the output signal
