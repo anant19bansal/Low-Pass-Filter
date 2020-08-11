@@ -1,0 +1,53 @@
+module test();
+  reg clk,reset,ready;	
+  reg signed [7:0] x;
+  wire signed [17:0] y;
+  reg [20:0] scount;    // keep track of which sample we're at
+  reg [5:0] cycle;      // wait 64 clocks between samples
+  integer fin,code;
+
+  lpf dut(.clk(clk),.rst(reset),.ready(ready),
+            .x(x),.y(y));
+
+  initial begin
+    // open input/output files
+    fin = $fopen("input.txt","r");
+    $dumpfile("hello.vcd");
+    $dumpvars(0, test);
+    // initialize state, assert reset for one clock cycle
+    scount = 0;
+    clk = 0;
+    cycle = 63;
+    ready = 0;
+    x = 0;
+    reset = 1;
+    #10 reset = 0;
+  end
+
+  // clk has 50% duty cycle, 10ns period
+  always #5 clk = ~clk;
+
+  always @(posedge clk) begin
+    if (cycle == 6'd63) begin
+      // assert ready next cycle, read next sample from file
+      ready <= 1; 
+      code = $fscanf(fin,"%d",x);
+      // if we reach the end of the input file, we're done
+      if (code != 1) begin
+        $stop;
+      end
+    end
+    else begin
+      ready <= 0;
+    end
+
+    if (ready) begin
+      // starting with sample 32, record results in output file
+      if (scount > 31) 
+        $display("%d",y);
+      scount <= scount + 1;
+    end
+
+    cycle <= cycle+1;
+  end
+endmodule

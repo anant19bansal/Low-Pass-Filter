@@ -1,0 +1,211 @@
+module lpf(y,x,ready,rst,clk);
+  input signed [7:0] x;
+  input ready, rst, clk;
+  output signed [17:0] y;
+  wire rst_i,rst_offset,rst_acc,rst_buff,inc_i,inc_offset,load_input, load_acc;
+  wire [4:0] i;
+  //wire signed [9:0] a;
+  
+  datapath dp (y,i, x, rst_i,rst_offset, rst_acc, rst_buff, inc_i, inc_offset,   load_input, load_acc, clk);
+  
+  controller cp (rst_i,rst_offset,rst_acc,rst_buff,inc_i,inc_offset,load_input, load_acc, i, ready, rst,clk);
+  
+endmodule
+
+module controller(rst_i,rst_offset,rst_acc,rst_buff,inc_i,inc_offset,load_input, load_acc, i, ready, rst,clk);
+  input [4:0] i;
+  input ready, rst, clk;
+  output reg rst_i,rst_offset,rst_acc,rst_buff,inc_i,inc_offset,load_input,load_acc;
+  reg [2:0] state, next_state;
+  parameter s0 = 3'b000, s1 = 3'b001, s2 = 3'b010, s3 = 3'b011, s4 = 3'b100;
+  
+  always@ (posedge clk)
+    begin
+      if(rst==1) state <= s0;
+      else state <= next_state;
+    end
+  
+  always@ (state, ready, rst, i)
+    begin
+      rst_i = 0;
+      rst_buff = 0;
+      rst_offset = 0;
+      rst_acc = 0;
+      load_input = 0;
+      load_acc = 0;
+      inc_i = 0;
+      inc_offset = 0;
+      case(state)
+        s0: begin
+          load_input =1;
+          if(rst) begin rst_buff = 1; rst_offset=1; rst_i=1; next_state = s0;end
+          else if(ready) begin rst_acc=1; next_state = s2; end
+          else next_state = s0;
+        end
+//       s0: if(rst==0) next_state = s1;
+//        	else begin rst_buff = 1; rst_offset=1; rst_i=1; next_state = s0; end
+//        s1: if(ready==1) begin load_input = 1; rst_acc=1; next_state = s2; end
+//        	else next_state = s1;
+        //s2: next_state = s3;
+        s2: begin
+              load_acc = 1;
+          	  inc_i = 1;
+              next_state = s4;
+            end
+        s4: if(i!=0) next_state = s2;
+        	else begin next_state = s0; inc_offset=1; end 
+      endcase
+    end
+endmodule
+
+
+module datapath(y,i, x, rst_i,rst_offset, rst_acc, rst_buff, inc_i, inc_offset,   load_input, load_acc, clk);
+  
+  input signed [7:0] x;
+  input rst_i,rst_offset,rst_acc,rst_buff,inc_i,inc_offset,load_input,load_acc,    clk;
+  output signed [17:0] y;
+  output [4:0] i;
+  wire [4:0] offset, index;
+  wire signed [7:0] xout;
+  wire signed [9:0] a;
+  wire signed [17:0] acc;
+  assign y = acc;
+  
+  indexin m1 (index, offset, i);
+  reg_i m2 (i, inc_i, rst_i, clk);
+  reg_offset m3 (offset, inc_offset, rst_offset, clk);
+  
+  buffer m4 (xout, index, x, load_input, rst_buff, clk);
+  
+  coefficient m5 (a, i);
+  
+  acc_multi m6 (acc, a, xout, load_acc, rst_acc, clk);
+  
+endmodule
+
+module indexin(index, offset, i);
+  input [4:0] offset, i;
+  output [4:0] index;
+  assign index = offset-i;
+endmodule
+
+module reg_i(i, inc_i, rst_i,clk);
+  input inc_i, rst_i, clk;
+  output reg [4:0] i;
+  
+  always@ (posedge clk, posedge rst_i)
+    begin
+      if(rst_i) i <= 0;
+      else if(inc_i) i <= (i+1)%31;
+    end
+endmodule
+
+module reg_offset(offset, inc_offset, rst_offset, clk);
+  input inc_offset, rst_offset, clk;
+  output reg [4:0] offset;
+  
+  always@ (posedge clk, posedge rst_offset)
+    begin
+      if(rst_offset) offset <= 0;
+      else if(inc_offset) offset <= offset+1;
+    end
+endmodule
+
+module buffer(xout, index, x, load_input, rst, clk);
+  input signed [7:0] x;
+  input [4:0] index;
+  input load_input, rst, clk;
+  output signed [7:0] xout;
+  reg signed [7:0] xin [31:0];
+  
+  assign xout = xin[index];
+  
+  always@(posedge clk, posedge rst)
+    begin
+      //xout <= xin[index];
+      if(rst)
+        begin
+          xin[0]<=0; xin[1]<=0; xin[2]<=0; xin[3]<=0; xin[4]<=0; xin[5]<=0;
+          xin[6]<=0; xin[7]<=0; xin[8]<=0; xin[9]<=0; xin[10]<=0; xin[11]<=0;
+          xin[12]<=0; xin[13]<=0; xin[14]<=0; xin[15]<=0; xin[16]<=0;
+          xin[17]<=0; xin[18]<=0; xin[19]<=0; xin[20]<=0; xin[21]<=0;
+          xin[22]<=0; xin[23]<=0; xin[24]<=0; xin[25]<=0; xin[26]<=0;
+          xin[27]<=0; xin[28]<=0; xin[29]<=0; xin[30]<=0; xin[31]<=0;
+        end
+      else if(load_input) xin[index] <= x;
+    end
+endmodule
+
+
+module acc_multi (acc, a, x, load_acc, rst, clk);
+  output signed [17:0] acc;
+  input signed [9:0] a;
+  input signed [7:0] x;
+  input clk, rst, load_acc;
+  wire signed [17:0] multi;
+  
+  accumulator m7 (acc, multi, load_acc,rst, clk);
+  multiply m8 (multi, a, x);
+  
+endmodule
+
+module accumulator (acc, in, load_acc, rst, clk);
+  input rst,clk, load_acc;
+  input signed [17:0] in;
+  output reg signed [17:0] acc;
+  always@ (posedge clk)
+    if(rst) acc <= 0;
+    else if(load_acc) acc <= acc+in;
+endmodule
+  
+
+
+module multiply (multi, a, b);
+  input signed [9:0] a;
+  input signed [7:0] b;
+  output signed [17:0] multi;
+  
+  assign multi = a*b;
+  
+endmodule
+
+module coefficient(a, i);
+  input [4:0] i;
+  output reg signed [9:0] a;
+  
+  always@ (i)
+    case(i)
+      5'd0:  a = -10'sd1;
+      5'd1:  a = -10'sd1;
+      5'd2:  a = -10'sd3;
+      5'd3:  a = -10'sd5;
+      5'd4:  a = -10'sd6;
+      5'd5:  a = -10'sd7;
+      5'd6:  a = -10'sd5;
+      5'd7:  a = 10'sd0;
+      5'd8:  a = 10'sd10;
+      5'd9:  a = 10'sd26;
+      5'd10: a = 10'sd46;
+      5'd11: a = 10'sd69;
+      5'd12: a = 10'sd91;
+      5'd13: a = 10'sd110;
+      5'd14: a = 10'sd123;
+      5'd15: a = 10'sd128;
+      5'd16: a = 10'sd123;
+      5'd17: a = 10'sd110;
+      5'd18: a = 10'sd91;
+      5'd19: a = 10'sd69;
+      5'd20: a = 10'sd46;
+      5'd21: a = 10'sd26;
+      5'd22: a = 10'sd10;
+      5'd23: a = 10'sd0;
+      5'd24: a = -10'sd5;
+      5'd25: a = -10'sd7;
+      5'd26: a = -10'sd6;
+      5'd27: a = -10'sd5;
+      5'd28: a = -10'sd3;
+      5'd29: a = -10'sd1;
+      5'd30: a = -10'sd1;
+      default: a = 10'hxxx;
+    endcase
+endmodule
