@@ -16,7 +16,7 @@ A causal discrete-time FIR filter of order N has the output sequence as the weig
   - bi is the filter coefficient
   <br>
   
-  <img src = ""><br>
+  <img src = "https://github.com/anant19bansal/Low-Pass-Filter/blob/master/FIR%20filter%20block%20diagram.jpg" width="50%"><br><br>
   The following MATLAB command was used to calculate the coefficients:<br><br>
   ```a = round(fir1(30,0.125)*1024)```<br><br>
   Usually filter coefficients are real numbers in the range [-1,1] but realistically we can only build hardware to do integer arithmetic. So the coefficients have been scaled i.e multiplied by 1024 and rounded to integers.
